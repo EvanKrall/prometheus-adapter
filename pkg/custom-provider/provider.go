@@ -84,11 +84,8 @@ func (p *prometheusProvider) metricFor(value pmodel.SampleValue, name types.Name
 		return nil, err
 	}
 
-	var q *resource.Quantity
 	if math.IsNaN(float64(value)) {
-		q = resource.NewQuantity(0, resource.DecimalSI)
-	} else {
-		q = resource.NewMilliQuantity(int64(value*1000.0), resource.DecimalSI)
+		return nil, apierr.NewInternalError(fmt.Errorf("value returned by prometheus query was NaN"))
 	}
 
 	metric := &custom_metrics.MetricValue{
@@ -98,7 +95,7 @@ func (p *prometheusProvider) metricFor(value pmodel.SampleValue, name types.Name
 		},
 		// TODO(directxman12): use the right timestamp
 		Timestamp: metav1.Time{time.Now()},
-		Value:     *q,
+		Value:     *resource.NewMilliQuantity(int64(value*1000.0), resource.DecimalSI),
 	}
 
 	if !metricSelector.Empty() {
